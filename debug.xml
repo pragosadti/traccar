@@ -16,10 +16,10 @@
 
     <entry key='mail.debug'>true</entry>
 
-    <entry key='database.driver'>org.h2.Driver</entry>
-    <entry key='database.url'>jdbc:h2:./target/database</entry>
-    <entry key='database.user'>sa</entry>
-    <entry key='database.password'></entry>
+    <entry key='database.driver'>com.mysql.cj.jdbc.Driver</entry>
+    <entry key='database.url'>jdbc:mysql://localhost:3306/traccar</entry>
+    <entry key='database.user'>root</entry>
+    <entry key='database.password'>root</entry>
 
     <!--<entry key='server.instantAcknowledgement'>true</entry>
     <entry key='server.buffering.threshold'>5000</entry>-->

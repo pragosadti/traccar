@@ -28,11 +28,7 @@ import org.traccar.model.Device;
 import org.traccar.model.Group;
 import org.traccar.model.Report;
 import org.traccar.model.User;
-import org.traccar.reports.EventsReportProvider;
-import org.traccar.reports.RouteReportProvider;
-import org.traccar.reports.StopsReportProvider;
-import org.traccar.reports.SummaryReportProvider;
-import org.traccar.reports.TripsReportProvider;
+import org.traccar.reports.*;
 import org.traccar.reports.common.ReportMailer;
 import org.traccar.storage.Storage;
 import org.traccar.storage.StorageException;
@@ -132,6 +128,11 @@ public class TaskReports extends SingleScheduleTask {
                     var summaryReportProvider = injector.getInstance(SummaryReportProvider.class);
                     reportMailer.sendAsync(user.getId(), stream -> summaryReportProvider.getExcel(
                             stream, user.getId(), deviceIds, groupIds, from, to, false));
+                }
+                case "ignition" -> {
+                    var summaryReportProvider = injector.getInstance(IgnitionReportProvider.class);
+                    reportMailer.sendAsync(user.getId(), stream -> summaryReportProvider.getExcel(
+                            stream, user.getId(), deviceIds, groupIds, from, to));
                 }
                 case "trips" -> {
                     var tripsReportProvider = injector.getInstance(TripsReportProvider.class);

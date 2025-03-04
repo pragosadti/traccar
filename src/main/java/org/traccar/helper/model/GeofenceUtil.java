@@ -19,11 +19,19 @@ import org.traccar.config.Config;
 import org.traccar.model.Geofence;
 import org.traccar.model.Position;
 import org.traccar.session.cache.CacheManager;
+import org.traccar.storage.Storage;
+import org.traccar.storage.StorageException;
+import org.traccar.storage.query.Columns;
+import org.traccar.storage.query.Condition;
+import org.traccar.storage.query.Order;
+import org.traccar.storage.query.Request;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
-public final class GeofenceUtil {
+public class GeofenceUtil {
 
     private GeofenceUtil() {
     }
@@ -31,12 +39,25 @@ public final class GeofenceUtil {
     public static List<Long> getCurrentGeofences(Config config, CacheManager cacheManager, Position position) {
         List<Long> result = new ArrayList<>();
         for (Geofence geofence : cacheManager.getDeviceObjects(position.getDeviceId(), Geofence.class)) {
-            if (geofence.getGeometry().containsPoint(
-                    config, geofence, position.getLatitude(), position.getLongitude())) {
+            if (geofence.getGeometry().containsPoint(config, geofence, position.getLatitude(), position.getLongitude())) {
                 result.add(geofence.getId());
             }
         }
         return result;
+    }
+
+
+    public static List<Geofence> getAllGeofences(
+            Storage storage) throws StorageException {
+        return storage.getObjects(Geofence.class, new Request(new Columns.All()));
+    }
+
+    public static Geofence getGeofenceById(CacheManager cacheManager, Long deviceId, Long geofenceId) {
+        Optional<Geofence> result = cacheManager.getDeviceObjects(deviceId, Geofence.class)
+                .stream()
+                .filter(geofence -> geofence.getId() == geofenceId)
+                .findFirst();
+        return result.orElse(null);
     }
 
 }

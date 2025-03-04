@@ -1197,6 +1197,59 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/ReportSummary'
+  /reports/ignition:
+    get:
+      summary: >-
+        Fetch a list of ReportIgnition within the time period for the Devices or
+        Groups
+      description: At least one _deviceId_ or one _groupId_ must be passed
+      tags:
+        - Reports
+      parameters:
+        - name: deviceId
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: integer
+        - name: groupId
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: integer
+        - name: from
+          in: query
+          description: in IS0 8601 format. eg. `1963-11-22T18:30:00Z`
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          description: in IS0 8601 format. eg. `1963-11-22T18:30:00Z`
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReportIgnition'
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ReportIgnition'
   /reports/trips:
     get:
       summary: >-
@@ -2062,6 +2115,25 @@ components:
           description: in liters
         engineHours:
           type: integer
+    ReportIgnition:
+      type: object
+      properties:
+        deviceId:
+          type: integer
+        deviceName:
+          type: string
+        geofence:
+          type: string
+        startTime:
+          type: string
+          description: in IS0 8601 format. eg. `1963-11-22T18:30:00Z`
+          format: date-time
+        endTime:
+          type: string
+          description: in IS0 8601 format. eg. `1963-11-22T18:30:00Z`
+          format: date-time
+        duration:
+          type: long
     ReportTrips:
       type: object
       properties:
