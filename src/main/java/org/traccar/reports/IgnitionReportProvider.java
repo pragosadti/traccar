@@ -16,6 +16,7 @@
 package org.traccar.reports;
 
 import jakarta.inject.Inject;
+import org.jxls.common.Context;
 import org.jxls.util.JxlsHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,9 +30,12 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.TimeZone;
 
 public class IgnitionReportProvider {
 
@@ -58,6 +62,7 @@ public class IgnitionReportProvider {
         Collection<IgnitionReportItem> items;
         try {
             items = ignition.getObjects(userId, deviceIds, groupIds, from, to);
+            items.forEach(IgnitionReportProvider::mapDateToString);
         } catch (SQLException | StorageException e) {
             throw new RuntimeException(e);
         }
@@ -65,14 +70,37 @@ public class IgnitionReportProvider {
         String templatePath = "templates/export";
 
         try (InputStream inputStream = Files.newInputStream(Paths.get(templatePath + "/ignition.xlsx"))) {
-            org.jxls.common.Context jxlsContext = new org.jxls.common.Context();
+            Context jxlsContext = new Context();
             jxlsContext.putVar("items", items);
-            jxlsContext.putVar("from", from);
-            jxlsContext.putVar("to", to);
+            jxlsContext.putVar("from", formatDate(from));
+            jxlsContext.putVar("to", formatDate(to));
             JxlsHelper.getInstance().setUseFastFormulaProcessor(false)
                     .processTemplate(inputStream, outputStream, jxlsContext);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static void mapDateToString(IgnitionReportItem ignitionReportItem) {
+        ignitionReportItem.setStartTimeString(formatDate(ignitionReportItem.getStartTime()));
+        ignitionReportItem.setEndTimeString(formatDate(ignitionReportItem.getEndTime()));
+    }
+
+    private static String formatDate(Date date) {
+        SimpleDateFormat inputFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
+        inputFormat.setTimeZone(TimeZone.getTimeZone("WET"));
+        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        // Set the output time zone to the desired time zone (e.g., Central European Time (CET))
+        outputFormat.setTimeZone(TimeZone.getTimeZone("CET"));
+        String formattedDate = "";
+
+        try {
+            Date parsed = inputFormat.parse(date.toString());
+            formattedDate = outputFormat.format(parsed);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return formattedDate;
     }
 }

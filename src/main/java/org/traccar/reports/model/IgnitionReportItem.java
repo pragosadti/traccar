@@ -19,7 +19,25 @@ package org.traccar.reports.model;
 public class IgnitionReportItem extends BaseReportItem {
     private String geofence;
     private long duration;
+    private String startTimeString;
+    private String endTimeString;
 
+
+    public String getStartTimeString() {
+        return startTimeString;
+    }
+
+    public void setStartTimeString(String startTimeString) {
+        this.startTimeString = startTimeString;
+    }
+
+    public String getEndTimeString() {
+        return endTimeString;
+    }
+
+    public void setEndTimeString(String endTimeString) {
+        this.endTimeString = endTimeString;
+    }
 
     public String getGeofence() {
         return geofence;
