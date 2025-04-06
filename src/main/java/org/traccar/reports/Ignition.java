@@ -9,19 +9,16 @@ import org.traccar.helper.model.PositionUtil;
 import org.traccar.model.Device;
 import org.traccar.model.Geofence;
 import org.traccar.model.Position;
+import org.traccar.reports.model.BaseReportItem;
 import org.traccar.reports.model.IgnitionReportItem;
 import org.traccar.storage.Storage;
 import org.traccar.storage.StorageException;
-import org.locationtech.jts.geom.Point;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.traccar.helper.DateUtil.formatDate;
 
 public class Ignition {
 
@@ -43,6 +40,7 @@ public class Ignition {
         report.setStartTime(start.getFixTime());
         report.setEndTime(end.getFixTime());
         report.setDuration(end.getFixTime().getTime() - start.getFixTime().getTime());
+        report.setEngineHours(report.getDuration() / 86400000.0);
 
         double distance = DistanceCalculator.distance(
                 start.getLatitude(), start.getLongitude(),
@@ -54,7 +52,7 @@ public class Ignition {
 
     private List<IgnitionReportItem> calculateDeviceReport(Device device, Date from, Date to) throws StorageException {
         List<IgnitionReportItem> result = new ArrayList<>();
-        List<Position> positions  = PositionUtil.getPositions(storage, device.getId(), from, to);
+        List<Position> positions = PositionUtil.getPositions(storage, device.getId(), from, to);
         List<Geofence> geofences = GeofenceUtil.getAllGeofences(storage);
 
         if (!positions.isEmpty()) {
@@ -99,12 +97,53 @@ public class Ignition {
     }
 
     public Collection<IgnitionReportItem> getObjects(long userId, Collection<Long> deviceIds,
-                                                     Collection<Long> groupIds, Date from, Date to) throws SQLException, StorageException {
+                                                     Collection<Long> groupIds, Date from, Date to, Boolean grouped) throws SQLException, StorageException {
         List<IgnitionReportItem> result = new ArrayList<>();
         for (Device device : DeviceUtil.getAccessibleDevices(storage, userId, deviceIds, groupIds)) {
             result.addAll(calculateDeviceReport(device, from, to));
         }
-        return result;
+        result.forEach(this::mapDateToString);
+
+        if (grouped) {
+            Map<String, IgnitionReportItem> groupedItems = result.stream()
+                    .collect(Collectors.groupingBy(
+                            item -> item.getDeviceId() + "-" + item.getGeofence().trim().toLowerCase() + "-" + item.getStartTimeString().substring(0, 10),
+                            Collectors.collectingAndThen(
+                                    Collectors.toList(),
+                                    list -> {
+                                        IgnitionReportItem first = list.get(0);
+                                        IgnitionReportItem groupedItem = new IgnitionReportItem();
+                                        groupedItem.setDeviceName(first.getDeviceName());
+                                        // Set grouping keys
+                                        groupedItem.setDeviceId(first.getDeviceId());
+                                        groupedItem.setGeofence(first.getGeofence());
+
+                                        String date = first.getStartTimeString().substring(0, 10);
+                                        groupedItem.setStartTimeString(date + " 00:00:00");
+                                        groupedItem.setEndTimeString(date + " 23:59:59");
+                                        groupedItem.setStartTime(first.getStartTime());
+
+                                        // Sum durations, distances, engine hours, etc.
+                                        long totalDuration = list.stream().mapToLong(IgnitionReportItem::getDuration).sum();
+                                        double totalDistance = list.stream().mapToDouble(IgnitionReportItem::getDistance).sum();
+                                        double totalEngineHours = list.stream().mapToDouble(IgnitionReportItem::getEngineHours).sum();
+
+                                        groupedItem.setDuration(totalDuration);
+                                        groupedItem.setDistance(totalDistance);
+                                        groupedItem.setEngineHours(totalEngineHours);
+
+                                        return groupedItem;
+                                    }
+                            )
+                    ));
+            return groupedItems.values();
+        }
+
+        return result.stream().sorted(Comparator.comparing(BaseReportItem::getStartTime)).collect(Collectors.toList());
     }
 
+    private void mapDateToString(IgnitionReportItem ignitionReportItem) {
+        ignitionReportItem.setStartTimeString(formatDate(ignitionReportItem.getStartTime()));
+        ignitionReportItem.setEndTimeString(formatDate(ignitionReportItem.getEndTime()));
+    }
 }

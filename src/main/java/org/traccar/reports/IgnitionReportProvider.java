@@ -30,12 +30,11 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
-import java.util.TimeZone;
+
+import static org.traccar.helper.DateUtil.formatDate;
 
 public class IgnitionReportProvider {
 
@@ -51,18 +50,17 @@ public class IgnitionReportProvider {
     }
 
     public Collection<IgnitionReportItem> getIgnitionReportItems(Collection<Long> deviceIds, Long userId, Collection<Long> groupIds,
-                                                                 Date from, Date to) throws Exception {
-        return new ArrayList<>(ignition.getObjects(userId, deviceIds, groupIds, from, to));
+                                                                 Date from, Date to, Boolean grouped) throws Exception {
+        return new ArrayList<>(ignition.getObjects(userId, deviceIds, groupIds, from, to, grouped));
     }
 
 
     public void getExcel(OutputStream outputStream, long userId, Collection<Long> deviceIds, Collection<Long> groupIds,
-            Date from, Date to) {
+                         Date from, Date to, Boolean grouped) {
         reportUtils.checkPeriodLimit(from, to);
         Collection<IgnitionReportItem> items;
         try {
-            items = ignition.getObjects(userId, deviceIds, groupIds, from, to);
-            items.forEach(IgnitionReportProvider::mapDateToString);
+            items = ignition.getObjects(userId, deviceIds, groupIds, from, to, grouped);
         } catch (SQLException | StorageException e) {
             throw new RuntimeException(e);
         }
@@ -79,28 +77,5 @@ public class IgnitionReportProvider {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private static void mapDateToString(IgnitionReportItem ignitionReportItem) {
-        ignitionReportItem.setStartTimeString(formatDate(ignitionReportItem.getStartTime()));
-        ignitionReportItem.setEndTimeString(formatDate(ignitionReportItem.getEndTime()));
-    }
-
-    private static String formatDate(Date date) {
-        SimpleDateFormat inputFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
-        inputFormat.setTimeZone(TimeZone.getTimeZone("WET"));
-        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        // Set the output time zone to the desired time zone (e.g., Central European Time (CET))
-        outputFormat.setTimeZone(TimeZone.getTimeZone("CET"));
-        String formattedDate = "";
-
-        try {
-            Date parsed = inputFormat.parse(date.toString());
-            formattedDate = outputFormat.format(parsed);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
-
-        return formattedDate;
     }
 }

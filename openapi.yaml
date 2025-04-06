@@ -1236,6 +1236,11 @@ paths:
           schema:
             type: string
             format: date-time
+        - name: grouped
+          in: query
+          description: If ignition time should be grouped by day
+          schema:
+            type: boolean
       responses:
         '200':
           description: OK

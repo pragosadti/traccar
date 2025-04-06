@@ -18,16 +18,13 @@ package org.traccar.schedule;
 import com.google.inject.Injector;
 import com.google.inject.servlet.RequestScoper;
 import com.google.inject.servlet.ServletScopes;
+import jakarta.inject.Inject;
 import net.fortuna.ical4j.model.Period;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.traccar.helper.LogAction;
-import org.traccar.model.BaseModel;
+import org.traccar.model.*;
 import org.traccar.model.Calendar;
-import org.traccar.model.Device;
-import org.traccar.model.Group;
-import org.traccar.model.Report;
-import org.traccar.model.User;
 import org.traccar.reports.*;
 import org.traccar.reports.common.ReportMailer;
 import org.traccar.storage.Storage;
@@ -36,14 +33,8 @@ import org.traccar.storage.query.Columns;
 import org.traccar.storage.query.Condition;
 import org.traccar.storage.query.Request;
 
-import jakarta.inject.Inject;
-
 import java.time.Instant;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -132,7 +123,7 @@ public class TaskReports extends SingleScheduleTask {
                 case "ignition" -> {
                     var summaryReportProvider = injector.getInstance(IgnitionReportProvider.class);
                     reportMailer.sendAsync(user.getId(), stream -> summaryReportProvider.getExcel(
-                            stream, user.getId(), deviceIds, groupIds, from, to));
+                            stream, user.getId(), deviceIds, groupIds, from, to, false));
                 }
                 case "trips" -> {
                     var tripsReportProvider = injector.getInstance(TripsReportProvider.class);

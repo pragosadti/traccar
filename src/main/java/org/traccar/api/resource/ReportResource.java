@@ -16,6 +16,12 @@
  */
 package org.traccar.api.resource;
 
+import jakarta.inject.Inject;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import org.traccar.api.SimpleObjectResource;
 import org.traccar.helper.DateUtil;
 import org.traccar.helper.LogAction;
@@ -23,35 +29,12 @@ import org.traccar.model.Event;
 import org.traccar.model.Position;
 import org.traccar.model.Report;
 import org.traccar.model.UserRestrictions;
-import org.traccar.reports.CombinedReportProvider;
-import org.traccar.reports.DevicesReportProvider;
-import org.traccar.reports.EventsReportProvider;
-import org.traccar.reports.IgnitionReportProvider;
-import org.traccar.reports.RouteReportProvider;
-import org.traccar.reports.StopsReportProvider;
-import org.traccar.reports.SummaryReportProvider;
-import org.traccar.reports.TripsReportProvider;
+import org.traccar.reports.*;
 import org.traccar.reports.common.ReportExecutor;
 import org.traccar.reports.common.ReportMailer;
-import org.traccar.reports.model.CombinedReportItem;
-import org.traccar.reports.model.IgnitionReportItem;
-import org.traccar.reports.model.StopReportItem;
-import org.traccar.reports.model.SummaryReportItem;
-import org.traccar.reports.model.TripReportItem;
+import org.traccar.reports.model.*;
 import org.traccar.storage.StorageException;
 
-import jakarta.inject.Inject;
-import jakarta.ws.rs.Consumes;
-import jakarta.ws.rs.GET;
-import jakarta.ws.rs.Path;
-import jakarta.ws.rs.PathParam;
-import jakarta.ws.rs.Produces;
-import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.HttpHeaders;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.StreamingOutput;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -346,8 +329,8 @@ public class ReportResource extends SimpleObjectResource<Report> {
     @GET
     public Collection<IgnitionReportItem> getIgnition(
             @QueryParam("deviceId") final List<Long> deviceIds, @QueryParam("groupId") final List<Long> groupIds,
-            @QueryParam("from") String from, @QueryParam("to") String to) throws Exception {
-        return ignitionReportProvider.getIgnitionReportItems(deviceIds, getUserId(), groupIds, DateUtil.parseDate(from), DateUtil.parseDate(to));
+            @QueryParam("from") String from, @QueryParam("to") String to, @QueryParam("grouped") Boolean grouped) throws Exception {
+        return ignitionReportProvider.getIgnitionReportItems(deviceIds, getUserId(), groupIds, DateUtil.parseDate(from), DateUtil.parseDate(to), grouped);
     }
 
     @Path("ignition/{type:xlsx|mail}")
@@ -358,11 +341,12 @@ public class ReportResource extends SimpleObjectResource<Report> {
             @QueryParam("groupId") final List<Long> groupIds,
             @QueryParam("from") Date from,
             @QueryParam("to") Date to,
-            @QueryParam("mail") boolean mail) {
+            @QueryParam("mail") boolean mail,
+            @QueryParam("grouped") boolean grouped) {
         return executeReport(getUserId(), mail, stream -> {
             try {
                 ignitionReportProvider.getExcel(stream, getUserId(), deviceIds, groupIds,
-                        from, to);
+                        from, to, grouped);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

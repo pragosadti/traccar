@@ -36,12 +36,7 @@ import org.traccar.helper.UnitsConverter;
 import org.traccar.helper.model.AttributeUtil;
 import org.traccar.helper.model.PositionUtil;
 import org.traccar.helper.model.UserUtil;
-import org.traccar.model.BaseModel;
-import org.traccar.model.Device;
-import org.traccar.model.Driver;
-import org.traccar.model.Event;
-import org.traccar.model.Position;
-import org.traccar.model.User;
+import org.traccar.model.*;
 import org.traccar.reports.model.BaseReportItem;
 import org.traccar.reports.model.StopReportItem;
 import org.traccar.reports.model.TripReportItem;
@@ -57,12 +52,10 @@ import org.traccar.storage.query.Request;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ReportUtils {
@@ -398,4 +391,21 @@ public class ReportUtils {
         return result;
     }
 
+    private static String formatDate(Date date) {
+        SimpleDateFormat inputFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
+        inputFormat.setTimeZone(TimeZone.getTimeZone("CET"));
+        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        // Set the output time zone to the desired time zone (e.g., Central European Time (CET))
+        outputFormat.setTimeZone(TimeZone.getTimeZone("CET"));
+        String formattedDate = "";
+
+        try {
+            Date parsed = inputFormat.parse(date.toString());
+            formattedDate = outputFormat.format(parsed);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return formattedDate;
+    }
 }

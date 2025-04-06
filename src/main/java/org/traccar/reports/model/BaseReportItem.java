@@ -21,6 +21,15 @@ import java.util.Date;
 public class BaseReportItem {
 
     private long deviceId;
+    private String deviceName;
+    private double distance;
+    private double averageSpeed;
+    private double maxSpeed;
+    private double spentFuel;
+    private double startOdometer;
+    private double endOdometer;
+    private Date startTime;
+    private Date endTime;
 
     public long getDeviceId() {
         return deviceId;
@@ -30,8 +39,6 @@ public class BaseReportItem {
         this.deviceId = deviceId;
     }
 
-    private String deviceName;
-
     public String getDeviceName() {
         return deviceName;
     }
@@ -39,8 +46,6 @@ public class BaseReportItem {
     public void setDeviceName(String deviceName) {
         this.deviceName = deviceName;
     }
-
-    private double distance;
 
     public double getDistance() {
         return distance;
@@ -54,8 +59,6 @@ public class BaseReportItem {
         this.distance += distance;
     }
 
-    private double averageSpeed;
-
     public double getAverageSpeed() {
         return averageSpeed;
     }
@@ -63,8 +66,6 @@ public class BaseReportItem {
     public void setAverageSpeed(double averageSpeed) {
         this.averageSpeed = averageSpeed;
     }
-
-    private double maxSpeed;
 
     public double getMaxSpeed() {
         return maxSpeed;
@@ -74,8 +75,6 @@ public class BaseReportItem {
         this.maxSpeed = maxSpeed;
     }
 
-    private double spentFuel;
-
     public double getSpentFuel() {
         return spentFuel;
     }
@@ -84,8 +83,6 @@ public class BaseReportItem {
         this.spentFuel = spentFuel;
     }
 
-    private double startOdometer;
-
     public double getStartOdometer() {
         return startOdometer;
     }
@@ -93,7 +90,6 @@ public class BaseReportItem {
     public void setStartOdometer(double startOdometer) {
         this.startOdometer = startOdometer;
     }
-    private double endOdometer;
 
     public double getEndOdometer() {
         return endOdometer;
@@ -103,8 +99,6 @@ public class BaseReportItem {
         this.endOdometer = endOdometer;
     }
 
-    private Date startTime;
-
     public Date getStartTime() {
         return startTime;
     }
@@ -113,7 +107,6 @@ public class BaseReportItem {
         this.startTime = startTime;
     }
 
-    private Date endTime;
 
     public Date getEndTime() {
         return endTime;

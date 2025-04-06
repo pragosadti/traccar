@@ -21,6 +21,7 @@ public class IgnitionReportItem extends BaseReportItem {
     private long duration;
     private String startTimeString;
     private String endTimeString;
+    private Double engineHours;
 
 
     public String getStartTimeString() {
@@ -37,6 +38,14 @@ public class IgnitionReportItem extends BaseReportItem {
 
     public void setEndTimeString(String endTimeString) {
         this.endTimeString = endTimeString;
+    }
+
+    public Double getEngineHours() {
+        return engineHours;
+    }
+
+    public void setEngineHours(Double engineHours) {
+        this.engineHours = engineHours;
     }
 
     public String getGeofence() {
