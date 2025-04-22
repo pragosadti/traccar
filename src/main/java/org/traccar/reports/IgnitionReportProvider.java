@@ -18,8 +18,6 @@ package org.traccar.reports;
 import jakarta.inject.Inject;
 import org.jxls.common.Context;
 import org.jxls.util.JxlsHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.traccar.reports.common.ReportUtils;
 import org.traccar.reports.model.IgnitionReportItem;
 import org.traccar.storage.StorageException;
@@ -38,7 +36,6 @@ import static org.traccar.helper.DateUtil.formatDate;
 
 public class IgnitionReportProvider {
 
-    private static final Logger log = LoggerFactory.getLogger(IgnitionReportProvider.class);
 
     private final ReportUtils reportUtils;
     private final Ignition ignition;

@@ -17,7 +17,13 @@
 package org.traccar.api.resource;
 
 import jakarta.inject.Inject;
-import jakarta.ws.rs.*;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -29,10 +35,21 @@ import org.traccar.model.Event;
 import org.traccar.model.Position;
 import org.traccar.model.Report;
 import org.traccar.model.UserRestrictions;
-import org.traccar.reports.*;
+import org.traccar.reports.CombinedReportProvider;
+import org.traccar.reports.DevicesReportProvider;
+import org.traccar.reports.EventsReportProvider;
+import org.traccar.reports.IgnitionReportProvider;
+import org.traccar.reports.RouteReportProvider;
+import org.traccar.reports.StopsReportProvider;
+import org.traccar.reports.SummaryReportProvider;
+import org.traccar.reports.TripsReportProvider;
 import org.traccar.reports.common.ReportExecutor;
 import org.traccar.reports.common.ReportMailer;
-import org.traccar.reports.model.*;
+import org.traccar.reports.model.CombinedReportItem;
+import org.traccar.reports.model.IgnitionReportItem;
+import org.traccar.reports.model.StopReportItem;
+import org.traccar.reports.model.SummaryReportItem;
+import org.traccar.reports.model.TripReportItem;
 import org.traccar.storage.StorageException;
 
 import java.util.Collection;

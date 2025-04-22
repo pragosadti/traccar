@@ -36,7 +36,12 @@ import org.traccar.helper.UnitsConverter;
 import org.traccar.helper.model.AttributeUtil;
 import org.traccar.helper.model.PositionUtil;
 import org.traccar.helper.model.UserUtil;
-import org.traccar.model.*;
+import org.traccar.model.BaseModel;
+import org.traccar.model.Device;
+import org.traccar.model.Driver;
+import org.traccar.model.Event;
+import org.traccar.model.Position;
+import org.traccar.model.User;
 import org.traccar.reports.model.BaseReportItem;
 import org.traccar.reports.model.StopReportItem;
 import org.traccar.reports.model.TripReportItem;
@@ -55,7 +60,12 @@ import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 public class ReportUtils {

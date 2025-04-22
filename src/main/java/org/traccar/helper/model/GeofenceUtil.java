@@ -22,16 +22,13 @@ import org.traccar.session.cache.CacheManager;
 import org.traccar.storage.Storage;
 import org.traccar.storage.StorageException;
 import org.traccar.storage.query.Columns;
-import org.traccar.storage.query.Condition;
-import org.traccar.storage.query.Order;
 import org.traccar.storage.query.Request;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-public class GeofenceUtil {
+public final class GeofenceUtil {
 
     private GeofenceUtil() {
     }

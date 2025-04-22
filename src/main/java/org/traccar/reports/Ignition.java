@@ -15,7 +15,12 @@ import org.traccar.storage.Storage;
 import org.traccar.storage.StorageException;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.traccar.helper.DateUtil.formatDate;

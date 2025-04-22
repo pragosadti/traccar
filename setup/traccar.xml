@@ -6,7 +6,7 @@
 
     <entry key='database.driver'>com.mysql.jdbc.Driver</entry>
     <entry key='database.url'>jdbc:mysql://localhost:3306</entry>
-    <entry key='database.user'>root</entry>
-    <entry key='database.password'>root</entry>
+    <entry key='database.user'>admin</entry>
+    <entry key='database.password'>pass</entry>
 
 </properties>
