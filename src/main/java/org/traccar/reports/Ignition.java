@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static java.util.stream.Collectors.collectingAndThen;
 import static org.traccar.helper.DateUtil.formatDate;
 
 public class Ignition {
@@ -34,6 +35,35 @@ public class Ignition {
     public Ignition(Storage storage, Config config) {
         this.storage = storage;
         this.config = config;
+    }
+
+    private static IgnitionReportItem toGroupedItem(List<IgnitionReportItem> list) {
+        IgnitionReportItem first = list.get(0);
+        IgnitionReportItem groupedItem = new IgnitionReportItem();
+        groupedItem.setDeviceName(first.getDeviceName());
+// Set grouping keys
+        groupedItem.setDeviceId(first.getDeviceId());
+        groupedItem.setGeofence(first.getGeofence());
+
+        String date = first.getStartTimeString().substring(0, 10);
+        groupedItem.setStartTimeString(date + " 00:00:00");
+        groupedItem.setEndTimeString(date + " 23:59:59");
+        groupedItem.setStartTime(first.getStartTime());
+
+// Sum durations, distances, engine hours, etc.
+        long totalDuration = list.stream().mapToLong(IgnitionReportItem::getDuration).sum();
+        double totalDistance = list.stream().mapToDouble(IgnitionReportItem::getDistance).sum();
+        double totalEngineHours = list.stream().mapToDouble(IgnitionReportItem::getEngineHours).sum();
+
+        groupedItem.setDuration(totalDuration);
+        groupedItem.setDistance(totalDistance);
+        groupedItem.setEngineHours(totalEngineHours);
+
+        return groupedItem;
+    }
+
+    private static String format(IgnitionReportItem item) {
+        return "%d-%s-%s".formatted(item.getDeviceId(), item.getGeofence().trim().toLowerCase(), item.getStartTimeString().substring(0, 10));
     }
 
     private IgnitionReportItem calculateIgnitionReport(
@@ -67,18 +97,17 @@ public class Ignition {
             for (int i = 0; i < positions.size(); i++) {
                 Position position = positions.get(i);
                 Boolean ignition = position.getBoolean(Position.KEY_IGNITION);
-                // Get geofence for position
                 long geofence = getGeofenceForPosition(geofences, position);
 
                 if (startIndex >= 0) {
-                    if (ignition != null && !ignition || geofence != startGeofence) {
+                    if (!ignition || geofence != startGeofence) {
                         result.add(calculateIgnitionReport(device, startGeofence, positions.get(startIndex), position));
                         startIndex = -1;
                         startGeofence = -1;
                     }
                 }
 
-                if (startIndex < 0 && ignition != null && ignition && geofence > 0) {
+                if (startIndex < 0 && ignition && geofence > 0) {
                     startIndex = i;
                     startGeofence = geofence;
                 }
@@ -94,7 +123,7 @@ public class Ignition {
     private long getGeofenceForPosition(List<Geofence> geofences, Position position) {
         for (Geofence geofence : geofences) {
             if (geofence.getGeometry().containsPoint(config, geofence, position.getLatitude(), position.getLongitude())) {
-                return geofence.getId();  // Return first matching geofence
+                return geofence.getId();
             }
         }
 
@@ -111,36 +140,7 @@ public class Ignition {
 
         if (grouped) {
             Map<String, IgnitionReportItem> groupedItems = result.stream()
-                    .collect(Collectors.groupingBy(
-                            item -> item.getDeviceId() + "-" + item.getGeofence().trim().toLowerCase() + "-" + item.getStartTimeString().substring(0, 10),
-                            Collectors.collectingAndThen(
-                                    Collectors.toList(),
-                                    list -> {
-                                        IgnitionReportItem first = list.get(0);
-                                        IgnitionReportItem groupedItem = new IgnitionReportItem();
-                                        groupedItem.setDeviceName(first.getDeviceName());
-                                        // Set grouping keys
-                                        groupedItem.setDeviceId(first.getDeviceId());
-                                        groupedItem.setGeofence(first.getGeofence());
-
-                                        String date = first.getStartTimeString().substring(0, 10);
-                                        groupedItem.setStartTimeString(date + " 00:00:00");
-                                        groupedItem.setEndTimeString(date + " 23:59:59");
-                                        groupedItem.setStartTime(first.getStartTime());
-
-                                        // Sum durations, distances, engine hours, etc.
-                                        long totalDuration = list.stream().mapToLong(IgnitionReportItem::getDuration).sum();
-                                        double totalDistance = list.stream().mapToDouble(IgnitionReportItem::getDistance).sum();
-                                        double totalEngineHours = list.stream().mapToDouble(IgnitionReportItem::getEngineHours).sum();
-
-                                        groupedItem.setDuration(totalDuration);
-                                        groupedItem.setDistance(totalDistance);
-                                        groupedItem.setEngineHours(totalEngineHours);
-
-                                        return groupedItem;
-                                    }
-                            )
-                    ));
+                    .collect(Collectors.groupingBy(Ignition::format, collectingAndThen(Collectors.toList(), Ignition::toGroupedItem)));
             return groupedItems.values();
         }
 
