@@ -139,9 +139,13 @@ public class Ignition {
         result.forEach(this::mapDateToString);
 
         if (grouped) {
-            Map<String, IgnitionReportItem> groupedItems = result.stream()
-                    .collect(Collectors.groupingBy(Ignition::format, collectingAndThen(Collectors.toList(), Ignition::toGroupedItem)));
-            return groupedItems.values();
+            Map<String, IgnitionReportItem> groupedItemsMap = result.stream()
+                    .collect(Collectors.groupingBy(Ignition::format,
+                            collectingAndThen(Collectors.toList(), Ignition::toGroupedItem)));
+            List<IgnitionReportItem> sortedGroupedItems = new ArrayList<>(groupedItemsMap.values());
+            sortedGroupedItems.sort(Comparator.comparing(BaseReportItem::getStartTime));
+
+            return sortedGroupedItems;
         }
 
         return result.stream().sorted(Comparator.comparing(BaseReportItem::getStartTime)).collect(Collectors.toList());
