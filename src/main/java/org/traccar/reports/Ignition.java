@@ -30,6 +30,7 @@ public class Ignition {
 
     private final Storage storage;
     private final Config config;
+    private static final double MILLISECONDS_IN_HOUR = 3600.0 * 1000.0;
 
     @Inject
     public Ignition(Storage storage, Config config) {
@@ -38,10 +39,13 @@ public class Ignition {
     }
 
     private static IgnitionReportItem toGroupedItem(List<IgnitionReportItem> list) {
-        IgnitionReportItem first = list.get(0);
+        if (list.isEmpty()) {
+            return null;
+        }
+
+        IgnitionReportItem first = list.stream().findFirst().orElseThrow();
         IgnitionReportItem groupedItem = new IgnitionReportItem();
         groupedItem.setDeviceName(first.getDeviceName());
-// Set grouping keys
         groupedItem.setDeviceId(first.getDeviceId());
         groupedItem.setGeofence(first.getGeofence());
 
@@ -50,7 +54,6 @@ public class Ignition {
         groupedItem.setEndTimeString(date + " 23:59:59");
         groupedItem.setStartTime(first.getStartTime());
 
-// Sum durations, distances, engine hours, etc.
         long totalDuration = list.stream().mapToLong(IgnitionReportItem::getDuration).sum();
         double totalDistance = list.stream().mapToDouble(IgnitionReportItem::getDistance).sum();
         double totalEngineHours = list.stream().mapToDouble(IgnitionReportItem::getEngineHours).sum();
@@ -75,7 +78,7 @@ public class Ignition {
         report.setStartTime(start.getFixTime());
         report.setEndTime(end.getFixTime());
         report.setDuration(end.getFixTime().getTime() - start.getFixTime().getTime());
-        report.setEngineHours(report.getDuration() / 86400000.0);
+        report.setEngineHours(report.getDuration() / MILLISECONDS_IN_HOUR);
 
         double distance = DistanceCalculator.distance(
                 start.getLatitude(), start.getLongitude(),
@@ -85,10 +88,9 @@ public class Ignition {
         return report;
     }
 
-    private List<IgnitionReportItem> calculateDeviceReport(Device device, Date from, Date to) throws StorageException {
+    private List<IgnitionReportItem> calculateDeviceReport(List<Geofence> geofenceList, Device device, Date from, Date to) throws StorageException {
         List<IgnitionReportItem> result = new ArrayList<>();
         List<Position> positions = PositionUtil.getPositions(storage, device.getId(), from, to);
-        List<Geofence> geofences = GeofenceUtil.getAllGeofences(storage);
 
         if (!positions.isEmpty()) {
             int startIndex = -1;
@@ -96,8 +98,8 @@ public class Ignition {
 
             for (int i = 0; i < positions.size(); i++) {
                 Position position = positions.get(i);
-                Boolean ignition = position.getBoolean(Position.KEY_IGNITION);
-                long geofence = getGeofenceForPosition(geofences, position);
+                boolean ignition = position.getBoolean(Position.KEY_IGNITION);
+                long geofence = getGeofenceForPosition(geofenceList, position);
 
                 if (startIndex >= 0) {
                     if (!ignition || geofence != startGeofence) {
@@ -120,8 +122,8 @@ public class Ignition {
         return result;
     }
 
-    private long getGeofenceForPosition(List<Geofence> geofences, Position position) {
-        for (Geofence geofence : geofences) {
+    private long getGeofenceForPosition(List<Geofence> geofenceList, Position position) {
+        for (Geofence geofence : geofenceList) {
             if (geofence.getGeometry().containsPoint(config, geofence, position.getLatitude(), position.getLongitude())) {
                 return geofence.getId();
             }
@@ -133,8 +135,10 @@ public class Ignition {
     public Collection<IgnitionReportItem> getObjects(long userId, Collection<Long> deviceIds,
                                                      Collection<Long> groupIds, Date from, Date to, Boolean grouped) throws SQLException, StorageException {
         List<IgnitionReportItem> result = new ArrayList<>();
+        List<Geofence> geofenceList = GeofenceUtil.getAllGeofences(storage);
+
         for (Device device : DeviceUtil.getAccessibleDevices(storage, userId, deviceIds, groupIds)) {
-            result.addAll(calculateDeviceReport(device, from, to));
+            result.addAll(calculateDeviceReport(geofenceList, device, from, to));
         }
         result.forEach(this::mapDateToString);
 
