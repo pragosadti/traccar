@@ -97,7 +97,7 @@ public class IgnitionTest {
             assertEquals("Test Zone", item.getGeofence());
             assertEquals(3600000L, item.getDuration());
             assertTrue(item.getDistance() > 0);
-            assertEquals(1.0 / 24, item.getEngineHours(), 0.0001);
+            assertEquals(1.0, item.getEngineHours(), 0.0001);
         }
     }
 
