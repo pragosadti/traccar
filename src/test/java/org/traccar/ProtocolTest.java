@@ -93,6 +93,10 @@ public class ProtocolTest extends BaseTest {
         return new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, method, url, Unpooled.buffer(), headers, new DefaultHttpHeaders());
     }
 
+    protected DefaultFullHttpRequest request(HttpMethod method, String url, HttpHeaders headers, ByteBuf data) {
+        return new DefaultFullHttpRequest(HttpVersion.HTTP_1_1, method, url, data, headers, new DefaultHttpHeaders());
+    }
+
     protected DefaultFullHttpResponse response(ByteBuf data) {
         return new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, data);
     }
@@ -255,8 +259,8 @@ public class ProtocolTest extends BaseTest {
             assertInstanceOf(Number.class, attributes.get(Position.KEY_RPM));
         }
 
-        if (attributes.containsKey(Position.KEY_FUEL_LEVEL)) {
-            assertInstanceOf(Number.class, attributes.get(Position.KEY_FUEL_LEVEL));
+        if (attributes.containsKey(Position.KEY_FUEL)) {
+            assertInstanceOf(Number.class, attributes.get(Position.KEY_FUEL));
         }
 
         if (attributes.containsKey(Position.KEY_FUEL_USED)) {

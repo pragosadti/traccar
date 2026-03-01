@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 - 2024 Anton Tananaev (anton@traccar.org)
+ * Copyright 2023 - 2025 Anton Tananaev (anton@traccar.org)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import jakarta.inject.Inject;
 import net.fortuna.ical4j.model.Period;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.traccar.helper.DateUtil;
 import org.traccar.helper.LogAction;
 import org.traccar.model.BaseModel;
 import org.traccar.model.Calendar;
@@ -42,11 +43,14 @@ import org.traccar.storage.query.Columns;
 import org.traccar.storage.query.Condition;
 import org.traccar.storage.query.Request;
 
+import jakarta.inject.Inject;
+
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -58,11 +62,13 @@ public class TaskReports extends SingleScheduleTask {
 
     private static final long CHECK_PERIOD_MINUTES = 15;
 
+    private final LogAction actionLogger;
     private final Storage storage;
     private final Injector injector;
 
     @Inject
-    public TaskReports(Storage storage, Injector injector) {
+    public TaskReports(LogAction actionLogger, Storage storage, Injector injector) {
+        this.actionLogger = actionLogger;
         this.storage = storage;
         this.injector = injector;
     }
@@ -104,18 +110,39 @@ public class TaskReports extends SingleScheduleTask {
         var deviceIds = storage.getObjects(Device.class, new Request(
                 new Columns.Include("id"),
                 new Condition.Permission(Device.class, Report.class, report.getId())))
-                .stream().map(BaseModel::getId).collect(Collectors.toList());
+                .stream().map(BaseModel::getId).toList();
+        var deviceIdsPart = deviceIds.stream()
+                .map(id -> "deviceId=" + id)
+                .collect(Collectors.joining("&"));
+
         var groupIds = storage.getObjects(Group.class, new Request(
                 new Columns.Include("id"),
                 new Condition.Permission(Group.class, Report.class, report.getId())))
-                .stream().map(BaseModel::getId).collect(Collectors.toList());
+                .stream().map(BaseModel::getId).toList();
+        var groupIdsPart = groupIds.stream()
+                .map(id -> "groupId=" + id)
+                .collect(Collectors.joining("&"));
+
         var users = storage.getObjects(User.class, new Request(
-                new Columns.Include("id"),
+                new Columns.All(),
                 new Condition.Permission(User.class, Report.class, report.getId())));
 
-        ReportMailer reportMailer = injector.getInstance(ReportMailer.class);
+        StringBuilder url = new StringBuilder("/reports/");
+        url.append(report.getType()).append('?');
+        if (!deviceIdsPart.isEmpty()) {
+            url.append(deviceIdsPart).append('&');
+        }
+        if (!groupIdsPart.isEmpty()) {
+            url.append(groupIdsPart).append('&');
+        }
+        url.append("from=").append(URLEncoder.encode(DateUtil.formatDate(from, true), StandardCharsets.UTF_8));
+        url.append('&');
+        url.append("to=").append(URLEncoder.encode(DateUtil.formatDate(to, true), StandardCharsets.UTF_8));
 
+        ReportMailer reportMailer = injector.getInstance(ReportMailer.class);
         for (User user : users) {
+            actionLogger.report(null, user.getId(), true, report.getType(), from, to, deviceIds, groupIds);
+            reportMailer.sendAsync(user, url.toString());
             LogAction.report(user.getId(), true, report.getType(), from, to, deviceIds, groupIds);
             switch (report.getType()) {
                 case "events" -> {
