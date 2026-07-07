@@ -112,10 +112,9 @@ public class Ignition {
      * @param start      The starting {@link Position} of the ignition-on period.
      * @param end        The ending {@link Position} of the ignition-on period.
      * @return An {@link IgnitionReportItem} detailing the ignition event.
-     * @throws StorageException If there's an issue accessing storage (though less likely in this refactored version for geofences).
      */
     private IgnitionReportItem calculateIgnitionReport(
-            List<Geofence> geofenceList, Device device, long geofenceId, Position start, Position end) throws StorageException {
+            List<Geofence> geofenceList, Device device, long geofenceId, Position start, Position end) {
         IgnitionReportItem report = new IgnitionReportItem();
         report.setDeviceId(device.getId());
         report.setDeviceName(device.getName());
@@ -175,7 +174,7 @@ public class Ignition {
                 }
             }
 
-            if (startIndex >= 0 && startIndex < positions.size()) { // Check if still less than size for safety
+            if (startIndex >= 0 && startIndex < positions.size()) {
                 result.add(calculateIgnitionReport(geofenceList, device, startGeofenceId, positions.get(startIndex), positions.get(positions.size() - 1)));
             }
         }
@@ -191,7 +190,7 @@ public class Ignition {
      */
     private long getGeofenceForPosition(List<Geofence> geofenceList, Position position) {
         for (Geofence geofence : geofenceList) {
-            if (geofence.getGeometry().containsPoint(config, geofence, position.getLatitude(), position.getLongitude())) {
+            if (geofence.getGeometry().containsPoint(position.getLatitude(), position.getLongitude())) {
                 return geofence.getId();
             }
         }

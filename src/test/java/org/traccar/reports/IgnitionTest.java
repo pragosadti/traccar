@@ -56,7 +56,7 @@ public class IgnitionTest {
         when(geofence.getName()).thenReturn("Test Zone");
 
         GeofenceGeometry geometry = mock(GeofenceGeometry.class);
-        when(geometry.containsPoint(any(), any(), anyDouble(), anyDouble())).thenReturn(true);
+        when(geometry.containsPoint(anyDouble(), anyDouble())).thenReturn(true);
         when(geofence.getGeometry()).thenReturn(geometry);
     }
 

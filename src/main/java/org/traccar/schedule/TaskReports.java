@@ -43,14 +43,13 @@ import org.traccar.storage.query.Columns;
 import org.traccar.storage.query.Condition;
 import org.traccar.storage.query.Request;
 
-import jakarta.inject.Inject;
-
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -143,7 +142,6 @@ public class TaskReports extends SingleScheduleTask {
         for (User user : users) {
             actionLogger.report(null, user.getId(), true, report.getType(), from, to, deviceIds, groupIds);
             reportMailer.sendAsync(user, url.toString());
-            LogAction.report(user.getId(), true, report.getType(), from, to, deviceIds, groupIds);
             switch (report.getType()) {
                 case "events" -> {
                     var eventsReportProvider = injector.getInstance(EventsReportProvider.class);

@@ -70,9 +70,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import java.util.TimeZone;
-import java.util.stream.Collectors;
 
 public class ReportUtils {
 
@@ -424,24 +422,73 @@ public class ReportUtils {
 
         for (Event event : events) {
             boolean motion = event.getType().equals(Event.TYPE_DEVICE_MOVING);
+
             if (motion == trips) {
+
                 startPosition = storage.getObject(Position.class, new Request(
                         new Columns.All(), new Condition.Equals("id", event.getPositionId())));
+
             } else if (startPosition != null) {
+
                 Position endPosition = storage.getObject(Position.class, new Request(
                         new Columns.All(), new Condition.Equals("id", event.getPositionId())));
+
                 if (endPosition != null) {
+                    double maxSpeed = 0;
+
+                    List<Position> tripPositions = storage.getObjects(Position.class, new Request(
+                            new Columns.Include("speed", "fixTime"),
+                            Condition.merge(List.of(
+                                    new Condition.Equals("deviceId", device.getId()),
+                                    new Condition.Between("fixTime",
+                                            startPosition.getFixTime(),
+                                            endPosition.getFixTime())
+                            ))
+                    ));
+
+                    for (Position p : tripPositions) {
+                        if (p.getSpeed() > maxSpeed) {
+                            maxSpeed = p.getSpeed();
+                        }
+                    }
+
                     result.add(calculateTripOrStop(
-                            device, startPosition, endPosition, 0, ignoreOdometer, reportClass));
+                            device, startPosition, endPosition,
+                            maxSpeed, ignoreOdometer, reportClass));
                 }
+
                 startPosition = null;
             }
         }
 
         if (startPosition != null) {
+
             Position endPosition = PositionUtil.getEdgePosition(storage, device.getId(), from, to, true);
-            result.add(calculateTripOrStop(
-                    device, startPosition, endPosition, 0, ignoreOdometer, reportClass));
+
+            if (endPosition != null) {
+
+                double maxSpeed = 0;
+
+                List<Position> tripPositions = storage.getObjects(Position.class, new Request(
+                        new Columns.Include("speed", "fixTime"),
+                        Condition.merge(List.of(
+                                new Condition.Equals("deviceId", device.getId()),
+                                new Condition.Between("fixTime",
+                                        startPosition.getFixTime(),
+                                        endPosition.getFixTime())
+                        ))
+                ));
+
+                for (Position p : tripPositions) {
+                    if (p.getSpeed() > maxSpeed) {
+                        maxSpeed = p.getSpeed();
+                    }
+                }
+
+                result.add(calculateTripOrStop(
+                        device, startPosition, endPosition,
+                        maxSpeed, ignoreOdometer, reportClass));
+            }
         }
 
         return result;
