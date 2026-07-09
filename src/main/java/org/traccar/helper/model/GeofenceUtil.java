@@ -18,9 +18,14 @@ package org.traccar.helper.model;
 import org.traccar.model.Geofence;
 import org.traccar.model.Position;
 import org.traccar.session.cache.CacheManager;
+import org.traccar.storage.Storage;
+import org.traccar.storage.StorageException;
+import org.traccar.storage.query.Columns;
+import org.traccar.storage.query.Request;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public final class GeofenceUtil {
 
@@ -35,6 +40,20 @@ public final class GeofenceUtil {
             }
         }
         return result;
+    }
+
+
+    public static List<Geofence> getAllGeofences(
+            Storage storage) throws StorageException {
+        return storage.getObjects(Geofence.class, new Request(new Columns.All()));
+    }
+
+    public static Geofence getGeofenceById(CacheManager cacheManager, Long deviceId, Long geofenceId) {
+        Optional<Geofence> result = cacheManager.getDeviceObjects(deviceId, Geofence.class)
+                .stream()
+                .filter(geofence -> geofence.getId() == geofenceId)
+                .findFirst();
+        return result.orElse(null);
     }
 
 }

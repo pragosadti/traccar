@@ -18,29 +18,6 @@ package org.traccar.api.resource;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.core.Context;
-import org.traccar.api.SimpleObjectResource;
-import org.traccar.helper.LogAction;
-import org.traccar.model.Event;
-import org.traccar.model.Position;
-import org.traccar.model.Report;
-import org.traccar.model.UserRestrictions;
-import org.traccar.reports.CombinedReportProvider;
-import org.traccar.reports.DevicesReportProvider;
-import org.traccar.reports.EventsReportProvider;
-import org.traccar.reports.GeofenceReportProvider;
-import org.traccar.reports.RouteReportProvider;
-import org.traccar.reports.StopsReportProvider;
-import org.traccar.reports.SummaryReportProvider;
-import org.traccar.reports.TripsReportProvider;
-import org.traccar.reports.common.ReportExecutor;
-import org.traccar.reports.common.ReportMailer;
-import org.traccar.reports.model.CombinedReportItem;
-import org.traccar.reports.model.GeofenceReportItem;
-import org.traccar.reports.model.StopReportItem;
-import org.traccar.reports.model.SummaryReportItem;
-import org.traccar.reports.model.TripReportItem;
-import org.traccar.storage.StorageException;
-
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -53,6 +30,32 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
+import org.traccar.api.SimpleObjectResource;
+import org.traccar.helper.DateUtil;
+import org.traccar.helper.LogAction;
+import org.traccar.model.Event;
+import org.traccar.model.Position;
+import org.traccar.model.Report;
+import org.traccar.model.UserRestrictions;
+import org.traccar.reports.CombinedReportProvider;
+import org.traccar.reports.DevicesReportProvider;
+import org.traccar.reports.EventsReportProvider;
+import org.traccar.reports.GeofenceReportProvider;
+import org.traccar.reports.IgnitionReportProvider;
+import org.traccar.reports.RouteReportProvider;
+import org.traccar.reports.StopsReportProvider;
+import org.traccar.reports.SummaryReportProvider;
+import org.traccar.reports.TripsReportProvider;
+import org.traccar.reports.common.ReportExecutor;
+import org.traccar.reports.common.ReportMailer;
+import org.traccar.reports.model.CombinedReportItem;
+import org.traccar.reports.model.GeofenceReportItem;
+import org.traccar.reports.model.IgnitionReportItem;
+import org.traccar.reports.model.StopReportItem;
+import org.traccar.reports.model.SummaryReportItem;
+import org.traccar.reports.model.TripReportItem;
+import org.traccar.storage.StorageException;
+
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
@@ -91,6 +94,9 @@ public class ReportResource extends SimpleObjectResource<Report> {
 
     @Inject
     private ReportMailer reportMailer;
+
+    @Inject
+    private IgnitionReportProvider ignitionReportProvider;
 
     @Inject
     private LogAction actionLogger;
@@ -359,8 +365,35 @@ public class ReportResource extends SimpleObjectResource<Report> {
     public Response getDevicesExcel(
             @PathParam("type") String type) throws StorageException {
         permissionsService.checkRestriction(getUserId(), UserRestrictions::getDisableReports);
-        return executeReport(getUserId(), type.equals("mail"), stream -> {
-            devicesReportProvider.getExcel(stream, getUserId());
+        return executeReport(getUserId(), type.equals("mail"), stream -> devicesReportProvider.getExcel(stream, getUserId()));
+    }
+
+
+    @Path("ignition")
+    @GET
+    public Collection<IgnitionReportItem> getIgnition(
+            @QueryParam("deviceId") final List<Long> deviceIds, @QueryParam("groupId") final List<Long> groupIds,
+            @QueryParam("from") String from, @QueryParam("to") String to, @QueryParam("grouped") Boolean grouped) throws Exception {
+        return ignitionReportProvider.getIgnitionReportItems(deviceIds, getUserId(), groupIds, DateUtil.parseDate(from), DateUtil.parseDate(to), grouped);
+    }
+
+    @Path("ignition/{type:xlsx|mail}")
+    @GET
+    @Produces(EXCEL)
+    public Response getIgnitionExcel(
+            @QueryParam("deviceId") final List<Long> deviceIds,
+            @QueryParam("groupId") final List<Long> groupIds,
+            @QueryParam("from") Date from,
+            @QueryParam("to") Date to,
+            @QueryParam("mail") boolean mail,
+            @QueryParam("grouped") boolean grouped) {
+        return executeReport(getUserId(), mail, stream -> {
+            try {
+                ignitionReportProvider.getExcel(stream, getUserId(), deviceIds, groupIds,
+                        from, to, grouped);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         });
     }
 

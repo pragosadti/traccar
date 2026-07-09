@@ -51,7 +51,7 @@ public class GpxExportProviderTest {
                 + "<trkseg>"
                 + "<trkpt lat=\"10.5\" lon=\"20.25\">"
                 + "<ele>30.75</ele>"
-                + "<time>1970-01-01T00:00:00Z</time>"
+                + "<time>1970-01-01 00:00:00</time>"
                 + "</trkpt>"
                 + "</trkseg>"
                 + "</trk>"

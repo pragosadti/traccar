@@ -59,6 +59,8 @@ import org.traccar.storage.query.Request;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -68,6 +70,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TimeZone;
 
 public class ReportUtils {
 
@@ -419,27 +422,93 @@ public class ReportUtils {
 
         for (Event event : events) {
             boolean motion = event.getType().equals(Event.TYPE_DEVICE_MOVING);
+
             if (motion == trips) {
+
                 startPosition = storage.getObject(Position.class, new Request(
                         new Columns.All(), new Condition.Equals("id", event.getPositionId())));
+
             } else if (startPosition != null) {
+
                 Position endPosition = storage.getObject(Position.class, new Request(
                         new Columns.All(), new Condition.Equals("id", event.getPositionId())));
+
                 if (endPosition != null) {
+                    double maxSpeed = 0;
+
+                    List<Position> tripPositions = storage.getObjects(Position.class, new Request(
+                            new Columns.Include("speed", "fixTime"),
+                            Condition.merge(List.of(
+                                    new Condition.Equals("deviceId", device.getId()),
+                                    new Condition.Between("fixTime",
+                                            startPosition.getFixTime(),
+                                            endPosition.getFixTime())
+                            ))
+                    ));
+
+                    for (Position p : tripPositions) {
+                        if (p.getSpeed() > maxSpeed) {
+                            maxSpeed = p.getSpeed();
+                        }
+                    }
+
                     result.add(calculateTripOrStop(
-                            device, startPosition, endPosition, 0, ignoreOdometer, reportClass));
+                            device, startPosition, endPosition,
+                            maxSpeed, ignoreOdometer, reportClass));
                 }
+
                 startPosition = null;
             }
         }
 
         if (startPosition != null) {
+
             Position endPosition = PositionUtil.getEdgePosition(storage, device.getId(), from, to, true);
-            result.add(calculateTripOrStop(
-                    device, startPosition, endPosition, 0, ignoreOdometer, reportClass));
+
+            if (endPosition != null) {
+
+                double maxSpeed = 0;
+
+                List<Position> tripPositions = storage.getObjects(Position.class, new Request(
+                        new Columns.Include("speed", "fixTime"),
+                        Condition.merge(List.of(
+                                new Condition.Equals("deviceId", device.getId()),
+                                new Condition.Between("fixTime",
+                                        startPosition.getFixTime(),
+                                        endPosition.getFixTime())
+                        ))
+                ));
+
+                for (Position p : tripPositions) {
+                    if (p.getSpeed() > maxSpeed) {
+                        maxSpeed = p.getSpeed();
+                    }
+                }
+
+                result.add(calculateTripOrStop(
+                        device, startPosition, endPosition,
+                        maxSpeed, ignoreOdometer, reportClass));
+            }
         }
 
         return result;
     }
 
+    private static String formatDate(Date date) {
+        SimpleDateFormat inputFormat = new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy");
+        inputFormat.setTimeZone(TimeZone.getTimeZone("CET"));
+        SimpleDateFormat outputFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        // Set the output time zone to the desired time zone (e.g., Central European Time (CET))
+        outputFormat.setTimeZone(TimeZone.getTimeZone("CET"));
+        String formattedDate = "";
+
+        try {
+            Date parsed = inputFormat.parse(date.toString());
+            formattedDate = outputFormat.format(parsed);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+
+        return formattedDate;
+    }
 }

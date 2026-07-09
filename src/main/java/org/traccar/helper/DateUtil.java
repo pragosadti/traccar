@@ -69,7 +69,9 @@ public final class DateUtil {
 
     public static String formatDate(Date date, boolean zoned) {
         if (zoned) {
-            return DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(ZoneId.systemDefault()).format(date.toInstant());
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                    .withZone(ZoneId.systemDefault());
+            return formatter.format(date.toInstant());
         } else {
             return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date);
         }
