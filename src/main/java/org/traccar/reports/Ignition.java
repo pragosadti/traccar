@@ -36,7 +36,7 @@ public class Ignition {
 
     private final Storage storage;
     private final Config config;
-    private static final double MILLISECONDS_IN_HOUR = 3600.0 * 1000.0;
+    private static final double MILLISECONDS_IN_DAY = 24.0 * 3600.0 * 1000.0;
 
     /**
      * Constructs an Ignition report generator.
@@ -126,7 +126,7 @@ public class Ignition {
         report.setStartTime(start.getFixTime());
         report.setEndTime(end.getFixTime());
         report.setDuration(end.getFixTime().getTime() - start.getFixTime().getTime());
-        report.setEngineHours(report.getDuration() / MILLISECONDS_IN_HOUR);
+        report.setEngineHours(report.getDuration() / MILLISECONDS_IN_DAY);
 
         double distance = DistanceCalculator.distance(
                 start.getLatitude(), start.getLongitude(),
